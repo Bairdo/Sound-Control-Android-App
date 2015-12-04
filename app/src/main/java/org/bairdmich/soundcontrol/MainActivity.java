@@ -87,19 +87,19 @@ public class MainActivity extends Activity {
 
         @Override
         public int getCount() {
-            // TODO Auto-generated method stub
+            // Auto-generated method stub
             return sessions.length;
         }
 
         @Override
         public Object getItem(int position) {
-            // TODO Auto-generated method stub
+            // Auto-generated method stub
             return null;
         }
 
         @Override
         public long getItemId(int position) {
-            // TODO Auto-generated method stub
+            // Auto-generated method stub
             return position;
         }
 
@@ -166,7 +166,6 @@ public class MainActivity extends Activity {
                                                   boolean fromUser) {
                         volLevel.setText(String.valueOf(progress));
                         sessions[position].setVolume(progress);
-                        // todo send update to server
 
                         if (server != null) {
                             server.update(sessions[position].getPid(), progress, sessions[position].isMuted());
