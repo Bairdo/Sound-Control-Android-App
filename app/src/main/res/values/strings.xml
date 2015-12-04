@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">SoundControl</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_display_controls">DisplayControls</string>
+    <string name="title_activity_my_list_activity">My List Activty</string>
+    <string name="edit_ip">IP Address</string>
+    <string name="edit_port">Port</string>
+    <string name="button_connect">Connect</string>
+</resources>
