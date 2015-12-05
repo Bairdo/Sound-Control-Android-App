@@ -13,11 +13,14 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-// todo receive icons from server.
 // todo receive updates from server.
+
+// todo receive icons from server.
 // todo have master vol (speaker static at top/bottom of page).
 // todo have list so i can use it without the top of my screen.
 // todo tidy up.
@@ -25,6 +28,14 @@ import java.util.TreeSet;
 // todo nicer login screen.
 // todo horozontal mode.
 // todo 'favourites' or profiles (probably need to save based on name.)
+// todo make server a windows service (or whatever, so runs on startup)
+// todo logging (server and app)
+// todo command line args (ports, logging) (server)
+// todo save last used port and ip (app) (maybe multiple ip and ports).
+
+
+// todo change speaker volume so works linearly (and in right to left direction).
+// todo ability to send multiple updates in the same packet. (from server in  particular) will reduce the wasted overhead by ,making the packet data bigger.
 
 /**
  * Created by Michael on 27/01/2015.
@@ -32,10 +43,17 @@ import java.util.TreeSet;
 public class ConnectSocketUDP extends AsyncTask<Object, String, String> {
 
     private static final String TAG = ConnectSocketUDP.class.toString();
+    private static final int STOP_PACKET_TYPE = 1;
+    private static final int UNKNOWN_PACKET_TYPE = 2;
+    private static final int SUCCESS_UPDATE = 0;
 
-    public Set<AudioSession> list = new TreeSet<>();
+    //public Set<AudioSession> list = new TreeSet<>();
+
+    public Map<Integer, AudioSession> list = new HashMap<>();
 
     DatagramSocket socket = null;
+
+
 
 
     @Override
@@ -57,21 +75,19 @@ public class ConnectSocketUDP extends AsyncTask<Object, String, String> {
                     socket.receive(p);
 
                     switch (readData(p.getData())) {
-                        case 0:
+                        case SUCCESS_UPDATE:
                             // success. update ui.
                             mainActivity.update(list, this);
                             break;
-                        case 1:
+                        case STOP_PACKET_TYPE:
                             socket.close();
                             mainActivity.stopService();
                             break;
-                        case 2:
+                        case UNKNOWN_PACKET_TYPE:
                             //unknown outcome
                             break;
                     }
-
                 }
-
             }
         } catch (IOException e) {
             System.err.println(e.getCause());
@@ -96,33 +112,44 @@ public class ConnectSocketUDP extends AsyncTask<Object, String, String> {
         }
         if (s == null) {
             Log.i(TAG, "data received converted to string was null??");
-            return 2;
+            return UNKNOWN_PACKET_TYPE;
         }
         if (s.startsWith("Status")) {
-            Log.i(TAG, "Received status update");
-            data = Arrays.copyOfRange(data, "Status".length(), data.length);
-            BufferedInputStream b = new BufferedInputStream(new ByteArrayInputStream(data));
-
-            try {
-                int pid = readPid(b);
-                int volume = readVol(b);
-                int nameLength = readLength(b);
-                String name = readName(b, nameLength);
-                AudioSession as = new AudioSession(pid, name, volume, false);
-                list.add(as);
-                Log.i(TAG, as.toString());
-
-            } catch (IOException e) {
-                e.printStackTrace();
-
-            }
-            return 0;
+            return processStatus(data);
         } else if (s.startsWith("Stop")) {
 
-            return 1;
+            return STOP_PACKET_TYPE;
         }
         Log.i(TAG, "Unknown packet type");
-        return 2;
+        return UNKNOWN_PACKET_TYPE;
+    }
+
+    private int processStatus(byte[] data) {
+        Log.i(TAG, "Received status update");
+        data = Arrays.copyOfRange(data, "Status".length(), data.length);
+        BufferedInputStream b = new BufferedInputStream(new ByteArrayInputStream(data));
+
+        try {
+            int pid = readPid(b);
+            int volume = readVol(b);
+            int nameLength = readLength(b);
+            String name = readName(b, nameLength);
+            boolean muted = readMuted(b);
+            AudioSession as = new AudioSession(pid, name, volume, muted);
+            list.put(pid, as);
+            Log.i(TAG, as.toString());
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            // todo what shall we do if error? return success or not?
+        }
+        return SUCCESS_UPDATE;
+    }
+
+    private boolean readMuted(BufferedInputStream b) throws IOException {
+        int muted = b.read();
+
+        return muted == 0 ? false : true;
     }
 
     private InetSocketAddress getInetSocketAddress(Object[] params) {

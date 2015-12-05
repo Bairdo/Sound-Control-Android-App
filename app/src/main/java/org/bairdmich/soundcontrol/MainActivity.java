@@ -17,6 +17,7 @@ import android.widget.TextView;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Set;
 
 public class MainActivity extends Activity {
@@ -46,7 +47,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    public void update(Set<AudioSession> audioSessions, ConnectSocketUDP server) {
+    public void update(Map<Integer, AudioSession> audioSessions, ConnectSocketUDP server) {
         ListView lv = (ListView) findViewById(R.id.list);
         ListAdapter la = (ListAdapter) lv.getAdapter();
         la.update(audioSessions);
@@ -67,9 +68,9 @@ public class MainActivity extends Activity {
             this.con = mainActivity;
         }
 
-        public void update(Set<AudioSession> audioSessions) {
+        public void update(Map<Integer, AudioSession> audioSessions) {
             Log.i(TAG, "GUI is being told to update");
-            sessions = audioSessions.toArray(sessions);
+            sessions = audioSessions.values().toArray(sessions);
             Arrays.sort(sessions, new Comparator<AudioSession>() {
                 @Override
                 public int compare(AudioSession lhs, AudioSession rhs) {
