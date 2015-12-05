@@ -25,7 +25,7 @@ public class MyListActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.list_entry);
-        TextView list = (TextView) findViewById(R.id.listy);
+        TextView list = (TextView) findViewById(R.id.audioAppList);
         list.setAdapter(new Adapter());
     }
 

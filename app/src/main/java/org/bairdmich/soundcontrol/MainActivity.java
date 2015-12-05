@@ -5,7 +5,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,12 +20,35 @@ import android.widget.TextView;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
-import java.util.Set;
 
 public class MainActivity extends Activity {
     private static final String TAG = MainActivity.class.toString();
 
-    ConnectSocketUDP server = null;
+    private ConnectSocketUDP server = null;
+
+    @Override
+    public boolean dispatchKeyEvent(@NonNull KeyEvent event) {
+        int keyCode = event.getKeyCode();
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_VOLUME_UP:
+                Log.i(TAG, "Volume up");
+                volumeButtonPressed(event);
+                return true;
+            case KeyEvent.KEYCODE_VOLUME_DOWN:
+                Log.i(TAG, "Volume down");
+                volumeButtonPressed(event);
+                return true;
+            default:
+                return super.dispatchKeyEvent(event);
+        }
+    }
+
+    private void volumeButtonPressed(KeyEvent event) {
+        ListView lv = (ListView) findViewById(R.id.list);
+        ListAdapter la = (ListAdapter) lv.getAdapter();
+        la.volumeButtonUpdate(event);
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,11 +86,41 @@ public class MainActivity extends Activity {
     }
 
     private class ListAdapter extends BaseAdapter {
-        private Context con;
+        private final Context con;
         private AudioSession sessions[] = new AudioSession[0];
 
         public ListAdapter(MainActivity mainActivity) {
             this.con = mainActivity;
+        }
+
+        public void volumeButtonUpdate(KeyEvent event) {
+
+            for (AudioSession as : sessions) {
+                if ("Speakers".equals(as.getName())) {
+                    int keyCode = event.getKeyCode();
+                    int step = 1;
+                    switch (keyCode) {
+                        case KeyEvent.KEYCODE_VOLUME_UP:
+                            as.setVolume(as.getVolume() + step);
+                        case KeyEvent.KEYCODE_VOLUME_DOWN:
+                            as.setVolume(as.getVolume() - step);
+                            break;
+                    }
+
+                    if (server != null) {
+                        server.update(as.getPid(), as.getVolume(), as.isMuted());
+                    }
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            notifyDataSetChanged();
+                        }
+                    });
+                    break;
+                }
+            }
+
+
         }
 
         public void update(Map<Integer, AudioSession> audioSessions) {
@@ -108,9 +163,9 @@ public class MainActivity extends Activity {
         public View getView(final int position, View convertView, ViewGroup parent) {
 
             LayoutInflater inflater = LayoutInflater.from(this.con);
-            View View = inflater.inflate(R.layout.list_entry, null);
+            convertView = inflater.inflate(R.layout.list_entry, null);
 
-            ImageView icon = (ImageView) View.findViewById(R.id.icon);
+            ImageView icon = (ImageView) convertView.findViewById(R.id.icon);
             if (icon != null) {
                 icon.setOnClickListener(new ImageView.OnClickListener() {
                     @Override
@@ -131,13 +186,13 @@ public class MainActivity extends Activity {
             }
 
 
-            SeekBar seekbar = (SeekBar) View.findViewById(R.id.volumeControlSeek);
+            SeekBar seekbar = (SeekBar) convertView.findViewById(R.id.volumeControlSeek);
             if (seekbar != null) {
-                final TextView volLevel = (TextView) View.findViewById(R.id.volumeLevel);
+                final TextView volLevel = (TextView) convertView.findViewById(R.id.volumeLevel);
                 volLevel.setText(String.valueOf(sessions[position].getVolume()));
 
                 seekbar.setProgress(sessions[position].getVolume());
-                final TextView appName = (TextView) View.findViewById(R.id.applicationName);
+                final TextView appName = (TextView) convertView.findViewById(R.id.applicationName);
                 appName.setText(sessions[position].getName());
 
                 if (sessions[position].isMuted()) {
@@ -145,9 +200,9 @@ public class MainActivity extends Activity {
                     seekbar.setProgressDrawable(d);
 
                 } else {
-                    Log.i(TAG, "getting drawable volumebar");
+                    Log.i(TAG, "getting drawable volumeBar");
                     Drawable d = getResources().getDrawable(R.drawable.volumebar);
-                    Log.i(TAG, "got drawable volumebar");
+                    Log.i(TAG, "got drawable volumeBar");
                     seekbar.setProgressDrawable(d);
 
                 }
@@ -177,7 +232,7 @@ public class MainActivity extends Activity {
 
 
             }
-            return View;
+            return  convertView;
         }
 
     }

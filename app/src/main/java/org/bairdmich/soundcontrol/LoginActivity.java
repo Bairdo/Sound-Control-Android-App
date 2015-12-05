@@ -21,7 +21,7 @@ public class LoginActivity extends ActionBarActivity {
 
         Intent i = new Intent(this, HelloService.class);
         i.putExtra("hostname", hostName);
-        i.putExtra("port", new Integer(port));
+        i.putExtra("port", Integer.valueOf(port));
         startService(i);
     }
 

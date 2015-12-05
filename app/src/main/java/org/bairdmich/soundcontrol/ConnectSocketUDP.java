@@ -15,10 +15,9 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
-// todo receive updates from server.
+
+// todo update server so when new programs are added to audio (thing) they are also registered with the app. (without having to restart the server)
 
 // todo receive icons from server.
 // todo have master vol (speaker static at top/bottom of page).
@@ -26,16 +25,18 @@ import java.util.TreeSet;
 // todo tidy up.
 // todo rearrange-able list.
 // todo nicer login screen.
-// todo horozontal mode.
+// todo horizontal mode.
 // todo 'favourites' or profiles (probably need to save based on name.)
 // todo make server a windows service (or whatever, so runs on startup)
 // todo logging (server and app)
 // todo command line args (ports, logging) (server)
 // todo save last used port and ip (app) (maybe multiple ip and ports).
-
+// todo add a homepage widget
+// todo add tests for both server and app
 
 // todo change speaker volume so works linearly (and in right to left direction).
 // todo ability to send multiple updates in the same packet. (from server in  particular) will reduce the wasted overhead by ,making the packet data bigger.
+// todo timestamp the udp packet, and only update if newer than the last
 
 /**
  * Created by Michael on 27/01/2015.
@@ -47,11 +48,9 @@ public class ConnectSocketUDP extends AsyncTask<Object, String, String> {
     private static final int UNKNOWN_PACKET_TYPE = 2;
     private static final int SUCCESS_UPDATE = 0;
 
-    //public Set<AudioSession> list = new TreeSet<>();
+    private final Map<Integer, AudioSession> list = new HashMap<>();
 
-    public Map<Integer, AudioSession> list = new HashMap<>();
-
-    DatagramSocket socket = null;
+    private DatagramSocket socket = null;
 
 
 
@@ -63,7 +62,7 @@ public class ConnectSocketUDP extends AsyncTask<Object, String, String> {
 
         String message = "uninitialised";
 
-        InetSocketAddress socketAddress = getInetSocketAddress(params);
+        InetSocketAddress socketAddress = getINetSocketAddress(params);
         try {
             socket = new DatagramSocket();
 
@@ -149,10 +148,10 @@ public class ConnectSocketUDP extends AsyncTask<Object, String, String> {
     private boolean readMuted(BufferedInputStream b) throws IOException {
         int muted = b.read();
 
-        return muted == 0 ? false : true;
+        return muted != 0;
     }
 
-    private InetSocketAddress getInetSocketAddress(Object[] params) {
+    private InetSocketAddress getINetSocketAddress(Object[] params) {
         String hostname = (String) params[1];
         int portNumber = (int) params[2];
 
