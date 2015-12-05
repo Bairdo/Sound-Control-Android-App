@@ -13,7 +13,6 @@ import android.util.Log;
 import android.widget.Toast;
 
 public class HelloService extends Service {
-    private Looper mServiceLooper;
     private ServiceHandler mServiceHandler;
 
     // Handler that receives messages from the thread
@@ -54,7 +53,7 @@ public class HelloService extends Service {
         thread.start();
 
         // Get the HandlerThread's Looper and use it for our Handler
-        mServiceLooper = thread.getLooper();
+        Looper mServiceLooper = thread.getLooper();
         mServiceHandler = new ServiceHandler(mServiceLooper);
     }
 
@@ -86,7 +85,7 @@ public class HelloService extends Service {
                 i.setClass(this, MainActivity.class);
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 i.putExtra("hostname", hostname);
-                i.putExtra("port", new Integer(port));
+                i.putExtra("port", Integer.valueOf(port));
                 startActivity(i);
 
 

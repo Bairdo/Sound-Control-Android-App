@@ -1,5 +1,7 @@
 package org.bairdmich.soundcontrol;
 
+import android.support.annotation.NonNull;
+
 /**
  * Created by Michael on 3/02/2015.
  */
@@ -51,7 +53,7 @@ public class AudioSession implements Comparable<AudioSession> {
     }
 
     @Override
-    public int compareTo(AudioSession another) {
+    public int compareTo(@NonNull AudioSession another) {
         return this.pid - another.pid;
     }
 

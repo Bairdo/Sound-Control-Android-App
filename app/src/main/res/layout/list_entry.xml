@@ -1,5 +1,5 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/listy"
+    android:id="@+id/audioAppList"
     android:layout_width="fill_parent"
     android:layout_height="?android:attr/listPreferredItemHeight"
     android:padding="6dip">
@@ -35,7 +35,7 @@
         android:layout_alignStart="@id/applicationName"
         android:layout_alignWithParentIfMissing="true"
         android:gravity="center_vertical"
-        android:text="0"
+        android:text=""
         android:textSize="16sp" />
 
     <SeekBar
