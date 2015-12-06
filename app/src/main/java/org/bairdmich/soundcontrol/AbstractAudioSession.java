@@ -18,6 +18,7 @@ public abstract class AbstractAudioSession implements Comparable<AbstractAudioSe
     public AbstractAudioSession(int pid, String name, int volume, boolean muted) {
         this.pid = pid;
         this.name = name;
+        this.volume = volume;
         this.muted = muted;
     }
 

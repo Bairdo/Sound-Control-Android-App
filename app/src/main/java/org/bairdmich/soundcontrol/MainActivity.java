@@ -16,12 +16,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends Activity implements ConnectionActivity {
@@ -47,9 +49,9 @@ public class MainActivity extends Activity implements ConnectionActivity {
     }
 
     private void volumeButtonPressed(KeyEvent event) {
-        ListView lv = (ListView) findViewById(R.id.list);
-        ListAdapter la = (ListAdapter) lv.getAdapter();
-        la.volumeButtonUpdate(event);
+        ListView endpointList = (ListView) findViewById(R.id.endpointList);
+        ListAdapter endpointListAdapter = (ListAdapter) endpointList.getAdapter();
+        endpointListAdapter.volumeButtonUpdate(event);
 
     }
 
@@ -58,8 +60,33 @@ public class MainActivity extends Activity implements ConnectionActivity {
         super.onCreate(savedInstanceState);
         super.setContentView(R.layout.main);
 
-        ListView lv = (ListView) findViewById(R.id.list);
-        lv.setAdapter(new ListAdapter(MainActivity.this));
+        ListView sessionList = (ListView) findViewById(R.id.sessionList);
+        sessionList.setAdapter(new ListAdapter(MainActivity.this));
+
+
+
+        /*LayoutInflater inflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        View view = inflater.inflate(R.layout.main, null);
+
+        LinearLayout endll = (LinearLayout) view.findViewById(R.id.endpointListLayout);
+
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams)  endll.getLayoutParams();
+        params.height = 110;
+        endll.setLayoutParams(params);
+
+        endll.requestLayout();*/
+
+
+
+
+        ListView endpointList = (ListView) findViewById(R.id.endpointList);
+        endpointList.setAdapter(new ListAdapter(MainActivity.this));
+
+        LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) endpointList.getLayoutParams();
+        //lp.height = 350;
+       // lp.height = lp.MATCH_PARENT;
+       // endpointList.setLayoutParams(lp);
+
 
         boolean ret = getApplicationContext().bindService(new Intent(this, ConnectionService.class), mConnection, Context.BIND_AUTO_CREATE);
     }
@@ -92,16 +119,36 @@ public class MainActivity extends Activity implements ConnectionActivity {
     };
 
     private void updateList(){
-        ListView lv = (ListView) findViewById(R.id.list);
-        ListAdapter la = (ListAdapter) lv.getAdapter();
-        la.update();
+        ListView sessionList = (ListView) findViewById(R.id.sessionList);
+        ListAdapter sessionListAdapter = (ListAdapter) sessionList.getAdapter();
+        sessionListAdapter.update();
+
+        ListView endpointList = (ListView) findViewById(R.id.endpointList);
+        ListAdapter endpointListAdapter = (ListAdapter) endpointList.getAdapter();
+        endpointListAdapter.update();
     }
 
-    public void update(Map<Integer, AbstractAudioSession> audioSessions, ConnectSocketUDP server) {
-        ListView lv = (ListView) findViewById(R.id.list);
-        ListAdapter la = (ListAdapter) lv.getAdapter();
-        la.update(audioSessions);
+    public void update(Map<Integer, AbstractAudioSession> allAudioSessions, ConnectSocketUDP server) {
         this.server = server;
+
+        Map<Integer, AbstractAudioSession> audioSessions = new HashMap<>();
+        Map<Integer, AbstractAudioSession> audioEndpoints = new HashMap<>();
+
+        for (Map.Entry<Integer, AbstractAudioSession> e: allAudioSessions.entrySet()){
+            if (e.getValue() instanceof AudioEndpoint){
+                audioEndpoints.put(e.getKey(), e.getValue());
+            } else if (e.getValue() instanceof AudioSession){
+                audioSessions.put(e.getKey(), e.getValue());
+            }
+        }
+
+        ListView sessionList = (ListView) findViewById(R.id.sessionList);
+        ListAdapter sessionListAdapter = (ListAdapter) sessionList.getAdapter();
+        sessionListAdapter.update(audioSessions);
+
+        ListView endpointList = (ListView) findViewById(R.id.endpointList);
+        ListAdapter endpointListAdapter = (ListAdapter) endpointList.getAdapter();
+        endpointListAdapter.update(audioEndpoints);
     }
 
     public void stopService() {
@@ -127,6 +174,7 @@ public class MainActivity extends Activity implements ConnectionActivity {
                     switch (keyCode) {
                         case KeyEvent.KEYCODE_VOLUME_UP:
                             as.setVolume(as.getVolume() + step);
+                            break;
                         case KeyEvent.KEYCODE_VOLUME_DOWN:
                             as.setVolume(as.getVolume() - step);
                             break;
@@ -176,7 +224,7 @@ public class MainActivity extends Activity implements ConnectionActivity {
         @Override
         public Object getItem(int position) {
             // Auto-generated method stub
-            return null;
+            return sessions[position];
         }
 
         @Override
