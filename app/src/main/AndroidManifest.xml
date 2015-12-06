@@ -21,5 +21,6 @@
             android:label="mainActivity" />
 
         <service android:name=".HelloService" />
+        <service android:name=".ConnectionService"/>
     </application>
 </manifest>

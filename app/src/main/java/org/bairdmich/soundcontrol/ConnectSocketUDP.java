@@ -1,8 +1,8 @@
 package org.bairdmich.soundcontrol;
 
+import android.app.Activity;
 import android.os.AsyncTask;
 import android.util.Log;
-
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -20,65 +20,29 @@ import java.util.Map;
 /**
  * Created by Michael on 27/01/2015.
  */
-public class ConnectSocketUDP extends AsyncTask<Object, String, String> {
+public class ConnectSocketUDP implements Runnable {
 
     private static final String TAG = ConnectSocketUDP.class.toString();
     private static final int STOP_PACKET_TYPE = 1;
     private static final int UNKNOWN_PACKET_TYPE = 2;
     private static final int SUCCESS_UPDATE = 0;
 
+    public Map<Integer, AudioSession> getList() {
+        return list;
+    }
+
     private final Map<Integer, AudioSession> list = new HashMap<>();
 
     private DatagramSocket socket = null;
+    private InetSocketAddress socketAddress;
 
+    private ConnectionService service;
 
-
-
-    @Override
-    protected String doInBackground(Object[] params) {
-        MainActivity mainActivity = (MainActivity) params[0];
-        Log.d(TAG, "doing in background");
-
-        String message = "uninitialised";
-
-        InetSocketAddress socketAddress = getINetSocketAddress(params);
-        try {
-            socket = new DatagramSocket();
-
-            if (initConnection(socket, socketAddress)) {
-                //send successful.
-
-                while (socket.isConnected()) {
-                    DatagramPacket p = new DatagramPacket(new byte[1000], 1000);
-                    socket.receive(p);
-
-                    switch (readData(p.getData())) {
-                        case SUCCESS_UPDATE:
-                            // success. update ui.
-                            mainActivity.update(list, this);
-                            break;
-                        case STOP_PACKET_TYPE:
-                            socket.close();
-                            mainActivity.stopService();
-                            break;
-                        case UNKNOWN_PACKET_TYPE:
-                            //unknown outcome
-                            break;
-                    }
-                }
-            }
-        } catch (IOException e) {
-            System.err.println(e.getCause());
-            System.err.println("Couldn't get I/O for the connection to '" +
-                    socketAddress.getHostName() + "'");
-            message = "Couldn't get I/O for the connection to '" +
-                    socketAddress.getHostName() + "'";
-        } finally {
-            if (socket != null) socket.close();
-        }
-
-        return message;
+    public ConnectSocketUDP(ConnectionService service, String hostname, int port){
+        this.socketAddress = getINetSocketAddress(hostname, port);
+        this.service = service;
     }
+
 
     private int readData(byte[] data) {
 
@@ -130,33 +94,33 @@ public class ConnectSocketUDP extends AsyncTask<Object, String, String> {
         return muted != 0;
     }
 
-    private InetSocketAddress getINetSocketAddress(Object[] params) {
-        String hostname = (String) params[1];
-        int portNumber = (int) params[2];
+
+
+    private InetSocketAddress getINetSocketAddress(String hostname, int port) {
 
         Log.d(TAG, "Hostname: '" + hostname + "'");
-        Log.d(TAG, "Port number: '" + portNumber + "'");
+        Log.d(TAG, "Port number: '" + port + "'");
 
-        return new InetSocketAddress(hostname, portNumber);
+        return new InetSocketAddress(hostname, port);
     }
 
     /**
      * tells server it is here,
      */
-    private boolean initConnection(DatagramSocket socket, InetSocketAddress address) {
+    private boolean initConnection(DatagramSocket s, InetSocketAddress address) {
 
         byte[] data = "Hello".getBytes();
 
 
         try {
-            socket.connect(address);
+            s.connect(address);
         } catch (SocketException e) {
             e.printStackTrace();
             Log.i(TAG, "Failed to connect to: " + address.getHostName() + " " + address.getPort() + ", SocketException");
         }
         DatagramPacket p = new DatagramPacket(data, data.length);
         try {
-            socket.send(p);
+            s.send(p);
         } catch (SocketException e) {
             e.printStackTrace();
             Log.i(TAG, "Failed to send hello, SocketException");
@@ -210,19 +174,7 @@ public class ConnectSocketUDP extends AsyncTask<Object, String, String> {
         return new String(name);
     }
 
-    @Override
-    protected void onProgressUpdate(String[] s) {
-
-        //act.callback(s[0]);
-
-    }
-
-
-    @Override
-    protected void onPostExecute(String message) {
-        //act.callback((String)message);
-    }
-
+    @SuppressWarnings("BooleanParameter")
     public void update(int pid, int volume, boolean muted) {
         byte[] update = "Update".getBytes();
 
@@ -246,5 +198,53 @@ public class ConnectSocketUDP extends AsyncTask<Object, String, String> {
             e.printStackTrace();
             Log.i(TAG, "Failed to send update, IOException");
         }
+    }
+
+    @Override
+    public void run() {
+        Log.d(TAG, "doing in runnable");
+
+        //String message = "uninitialised";
+
+        try {
+            socket = new DatagramSocket();
+
+            if (initConnection(socket, socketAddress)) {
+                //send successful.
+
+                while (socket.isConnected()) {
+                    DatagramPacket p = new DatagramPacket(new byte[1000], 1000);
+                    socket.receive(p);
+
+                    switch (readData(p.getData())) {
+                        case SUCCESS_UPDATE:
+                            // success. update ui.
+                            // todo
+                            service.update(list, this);
+                            break;
+                        case STOP_PACKET_TYPE:
+                            socket.close();
+                            // todo
+                            service.stopService();
+                            break;
+                        case UNKNOWN_PACKET_TYPE:
+                            //unknown outcome
+                            break;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            System.err.println(e.getCause());
+            System.err.println("Couldn't get I/O for the connection to '" +
+                    socketAddress.getHostName() + "'");
+            //message = "Couldn't get I/O for the connection to '" +
+            //        socketAddress.getHostName() + "'";
+        } finally {
+            if (socket != null) socket.close();
+            Log.d(TAG, "runnable is done");
+        }
+
+
+
     }
 }

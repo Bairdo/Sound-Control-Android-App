@@ -19,10 +19,12 @@ public class LoginActivity extends ActionBarActivity {
         EditText portText = (EditText) findViewById(R.id.edit_port);
         String port = portText.getText().toString().trim();
 
-        Intent i = new Intent(this, HelloService.class);
+        Intent i = new Intent(this, ConnectionService.class);
         i.putExtra("hostname", hostName);
         i.putExtra("port", Integer.valueOf(port));
         startService(i);
+        Intent mainact = new Intent(this, MainActivity.class);
+        startActivity(mainact);
     }
 
     @Override
