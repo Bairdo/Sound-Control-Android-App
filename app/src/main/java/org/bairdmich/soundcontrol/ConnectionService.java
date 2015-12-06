@@ -92,7 +92,7 @@ public class ConnectionService extends Service {
         return START_STICKY;
     }
 
-    public void update(Map<Integer, AudioSession> list, ConnectSocketUDP server){
+    public void update(Map<Integer, AbstractAudioSession> list, ConnectSocketUDP server){
         for (ConnectionActivity act: activities){
             act.update(list, server);
         }

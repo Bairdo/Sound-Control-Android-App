@@ -27,11 +27,11 @@ public class ConnectSocketUDP implements Runnable {
     private static final int UNKNOWN_PACKET_TYPE = 2;
     private static final int SUCCESS_UPDATE = 0;
 
-    public Map<Integer, AudioSession> getList() {
+    public Map<Integer, AbstractAudioSession> getList() {
         return list;
     }
 
-    private final Map<Integer, AudioSession> list = new HashMap<>();
+    private final Map<Integer, AbstractAudioSession> list = new HashMap<>();
 
     private DatagramSocket socket = null;
     private InetSocketAddress socketAddress;
@@ -73,13 +73,25 @@ public class ConnectSocketUDP implements Runnable {
 
         try {
             int pid = readPid(b);
-            int volume = readVol(b);
-            int nameLength = readLength(b);
-            String name = readName(b, nameLength);
-            boolean muted = readMuted(b);
-            AudioSession as = new AudioSession(pid, name, volume, muted);
-            list.put(pid, as);
-            Log.i(TAG, as.toString());
+            if (pid == 999999){
+                int volume = readVol(b);
+                int nameLength = readLength(b);
+                String name = readName(b, nameLength);
+                boolean muted = readMuted(b);
+                AbstractAudioSession ae = new AudioEndpoint(pid, name, volume, muted);
+                list.put(pid, ae);
+                Log.i(TAG, ae.toString());
+            }else {
+                int volume = readVol(b);
+                int nameLength = readLength(b);
+                String name = readName(b, nameLength);
+                boolean muted = readMuted(b);
+                AudioSession as = new AudioSession(pid, name, volume, muted);
+                list.put(pid, as);
+                Log.i(TAG, as.toString());
+            }
+
+
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -144,6 +156,14 @@ public class ConnectSocketUDP implements Runnable {
         return pid1 | pid2 << 8 | pid3 << 16 | pid4 << 24;
     }
 
+    private float readVolFloat(BufferedInputStream in) throws IOException {
+        int netFloat1 = in.read();
+        int netFloat2 = in.read();
+        int netFloat3 = in.read();
+        int netFloat4 = in.read();
+        return Float.intBitsToFloat(netFloat1 | netFloat2 << 8 | netFloat3 << 16 | netFloat4 << 24);
+    }
+
     private int readVol(BufferedInputStream in) throws IOException {
         int netFloat1 = in.read();
         int netFloat2 = in.read();
@@ -175,17 +195,18 @@ public class ConnectSocketUDP implements Runnable {
     }
 
     @SuppressWarnings("BooleanParameter")
-    public void update(int pid, int volume, boolean muted) {
+    public void update(AbstractAudioSession as) {
         byte[] update = "Update".getBytes();
 
-        byte[] pidBytes = ByteBuffer.allocate(4).putInt(pid).array();
-        byte[] volumeBytes = ByteBuffer.allocate(4).putInt(volume).array();
+        byte[] pidBytes = ByteBuffer.allocate(4).putInt(as.getPid()).array();
+        byte[] volumeBytes = ByteBuffer.allocate(4).putInt(as.getVolume()).array();
+
         byte[] dst = new byte[update.length + pidBytes.length + volumeBytes.length + 1]; // 1 for muted
         System.arraycopy(update, 0, dst, 0, update.length);
         System.arraycopy(pidBytes, 0, dst, update.length, pidBytes.length);
         System.arraycopy(volumeBytes, 0, dst, update.length + pidBytes.length, volumeBytes.length);
 
-        dst[dst.length - 1] = (byte) (muted ? 1 : 0);
+        dst[dst.length - 1] = (byte) (as.isMuted() ? 1 : 0);
 
         DatagramPacket packet = new DatagramPacket(dst, dst.length);
 

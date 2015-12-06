@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.drawable.Drawable;
-import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
@@ -98,7 +97,7 @@ public class MainActivity extends Activity implements ConnectionActivity {
         la.update();
     }
 
-    public void update(Map<Integer, AudioSession> audioSessions, ConnectSocketUDP server) {
+    public void update(Map<Integer, AbstractAudioSession> audioSessions, ConnectSocketUDP server) {
         ListView lv = (ListView) findViewById(R.id.list);
         ListAdapter la = (ListAdapter) lv.getAdapter();
         la.update(audioSessions);
@@ -113,7 +112,7 @@ public class MainActivity extends Activity implements ConnectionActivity {
 
     private class ListAdapter extends BaseAdapter {
         private final Context con;
-        private AudioSession sessions[] = new AudioSession[0];
+        private AbstractAudioSession sessions[] = new AbstractAudioSession[0];
 
         public ListAdapter(MainActivity mainActivity) {
             this.con = mainActivity;
@@ -121,7 +120,7 @@ public class MainActivity extends Activity implements ConnectionActivity {
 
         public void volumeButtonUpdate(KeyEvent event) {
 
-            for (AudioSession as : sessions) {
+            for (AbstractAudioSession as : sessions) {
                 if ("Speakers".equals(as.getName())) {
                     int keyCode = event.getKeyCode();
                     int step = 1;
@@ -134,7 +133,7 @@ public class MainActivity extends Activity implements ConnectionActivity {
                     }
 
                     if (server != null) {
-                        server.update(as.getPid(), as.getVolume(), as.isMuted());
+                        server.update(as);
                     }
                     update();
                     break;
@@ -144,13 +143,13 @@ public class MainActivity extends Activity implements ConnectionActivity {
 
         }
 
-        public void update(Map<Integer, AudioSession> audioSessions) {
+        public void update(Map<Integer, AbstractAudioSession> audioSessions) {
             Log.i(TAG, "GUI is being told to update");
             sessions = audioSessions.values().toArray(sessions);
-            Arrays.sort(sessions, new Comparator<AudioSession>() {
+            Arrays.sort(sessions, new Comparator<AbstractAudioSession>() {
                 @Override
-                public int compare(AudioSession lhs, AudioSession rhs) {
-                    return lhs.getPid() < rhs.getPid() ? 1 : lhs.getPid() == rhs.getPid() ? 0 : -1;
+                public int compare(AbstractAudioSession lhs, AbstractAudioSession rhs) {
+                    return lhs.getPid() > rhs.getPid() ? 1 : lhs.getPid() == rhs.getPid() ? 0 : -1;
                 }
             });
 
@@ -200,7 +199,7 @@ public class MainActivity extends Activity implements ConnectionActivity {
                         Log.i(TAG, "Icon in list was Clicked");
 
                         sessions[position].setMuted(!sessions[position].isMuted());
-                        server.update(sessions[position].getPid(), sessions[position].getVolume(), sessions[position].isMuted());
+                        server.update(sessions[position]);
                         update();
                     }
                 });
@@ -246,7 +245,7 @@ public class MainActivity extends Activity implements ConnectionActivity {
                         sessions[position].setVolume(progress);
 
                         if (server != null) {
-                            server.update(sessions[position].getPid(), progress, sessions[position].isMuted());
+                            server.update(sessions[position]);
                         }
 
                     }
