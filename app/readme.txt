@@ -1,7 +1,9 @@
 // todo update server so when new programs are added to audio (thing) they are also registered with the app. (without having to restart the server)
 
 // todo receive icons from server.
+
 // todo have master vol (speaker static at top/bottom of page).
+
 // todo have list so i can use it without the top of my screen.
 // todo tidy up.
 // todo rearrange-able list.
