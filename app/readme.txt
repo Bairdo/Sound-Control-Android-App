@@ -6,7 +6,6 @@
 // todo tidy up.
 // todo rearrange-able list.
 // todo nicer login screen.
-// todo horizontal mode.
 // todo 'favourites' or profiles (probably need to save based on name.)
 // todo make server a windows service (or whatever, so runs on startup)
 // todo logging (server and app)
