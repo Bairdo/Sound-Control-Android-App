@@ -1,10 +1,14 @@
 package org.bairdmich.soundcontrol;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.drawable.Drawable;
+import android.os.Binder;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -21,7 +25,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements ConnectionActivity {
     private static final String TAG = MainActivity.class.toString();
 
     private ConnectSocketUDP server = null;
@@ -68,8 +72,48 @@ public class MainActivity extends Activity {
             String hostname = extras.getString("hostname");
             Log.d(TAG, "port: " + port);
             Log.d(TAG, "hostname: " + hostname);
-            new ConnectSocketUDP().execute(this, hostname, port);
+
+            //new ConnectSocketUDP(this, hostname, port).execute();
         }
+
+        // need to bind with service.
+        // need to then add notify.
+
+        boolean ret = getApplicationContext().bindService(new Intent(this, ConnectionService.class), mConnection, Context.BIND_AUTO_CREATE);
+
+
+
+    }
+
+    ConnectionService mService;
+    boolean mBound = false;
+    /** Defines callbacks for service binding, passed to bindService() */
+    private ServiceConnection mConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            // We've bound to COnnectionService, cast the IBinder and get ConnectionService instance
+            ConnectionService.LocalBinder binder = (ConnectionService.LocalBinder) service;
+            mService = binder.getService();
+            mBound = true;
+            mService.addNotify(MainActivity.this);
+            server = mService.getServer();
+//            updateList();
+            update(server.getList(), server);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            mService.removeNotify(MainActivity.this);
+            mBound = false;
+        }
+    };
+
+    private void updateList(){
+        ListView lv = (ListView) findViewById(R.id.list);
+        ListAdapter la = (ListAdapter) lv.getAdapter();
+        la.update();
     }
 
     public void update(Map<Integer, AudioSession> audioSessions, ConnectSocketUDP server) {
@@ -110,12 +154,7 @@ public class MainActivity extends Activity {
                     if (server != null) {
                         server.update(as.getPid(), as.getVolume(), as.isMuted());
                     }
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            notifyDataSetChanged();
-                        }
-                    });
+                    update();
                     break;
                 }
             }
@@ -132,7 +171,13 @@ public class MainActivity extends Activity {
                     return lhs.getPid() < rhs.getPid() ? 1 : lhs.getPid() == rhs.getPid() ? 0 : -1;
                 }
             });
+
+
             //assert sessions.length == audioSessions.size();
+            update();
+        }
+
+        private void update() {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -174,12 +219,7 @@ public class MainActivity extends Activity {
 
                         sessions[position].setMuted(!sessions[position].isMuted());
                         server.update(sessions[position].getPid(), sessions[position].getVolume(), sessions[position].isMuted());
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                notifyDataSetChanged();
-                            }
-                        });
+                        update();
                     }
                 });
 
