@@ -62,27 +62,7 @@ public class MainActivity extends Activity implements ConnectionActivity {
         ListView lv = (ListView) findViewById(R.id.list);
         lv.setAdapter(new ListAdapter(MainActivity.this));
 
-        Intent intent = getIntent();
-        Bundle extras = intent.getExtras();
-        if (extras == null) {
-            Log.d(TAG, "extras was null");
-
-        } else {
-            int port = extras.getInt("port");
-            String hostname = extras.getString("hostname");
-            Log.d(TAG, "port: " + port);
-            Log.d(TAG, "hostname: " + hostname);
-
-            //new ConnectSocketUDP(this, hostname, port).execute();
-        }
-
-        // need to bind with service.
-        // need to then add notify.
-
         boolean ret = getApplicationContext().bindService(new Intent(this, ConnectionService.class), mConnection, Context.BIND_AUTO_CREATE);
-
-
-
     }
 
     ConnectionService mService;
@@ -93,14 +73,16 @@ public class MainActivity extends Activity implements ConnectionActivity {
         @Override
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
-            // We've bound to COnnectionService, cast the IBinder and get ConnectionService instance
+            // We've bound to ConnectionService, cast the IBinder and get ConnectionService instance
             ConnectionService.LocalBinder binder = (ConnectionService.LocalBinder) service;
             mService = binder.getService();
             mBound = true;
             mService.addNotify(MainActivity.this);
             server = mService.getServer();
-//            updateList();
-            update(server.getList(), server);
+
+            if (server != null) {
+                update(server.getList(), server);
+            }
         }
 
         @Override

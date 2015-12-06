@@ -35,26 +35,6 @@ public class ConnectionService extends Service {
         public ServiceHandler(Looper looper) {
             super(looper);
         }
-
-        @Override
-        public void handleMessage(Message msg) {
-            //todo????
-
-            // Normally we would do some work here, like download a file.
-            // For our sample, we just sleep for 5 seconds.
-            long endTime = System.currentTimeMillis() + 5 * 1000;
-            while (System.currentTimeMillis() < endTime) {
-                synchronized (this) {
-                    try {
-                        wait(endTime - System.currentTimeMillis());
-                    } catch (Exception e) {
-                    }
-                }
-            }
-            // Stop the service using the startId, so that we don't stop
-            // the service in the middle of handling another job
-            stopSelf(msg.arg1);
-        }
     }
 
     @Override
@@ -80,11 +60,6 @@ public class ConnectionService extends Service {
 
         // For each start request, send a message to start a job and deliver the
         // start ID so we know which request we're stopping when we finish the job
-        Message msg = mServiceHandler.obtainMessage();
-//        msg.arg1 = startId;
-
-//        mServiceHandler.sendMessage(msg);
-
 
         if (intent != null) {
             Bundle extras = intent.getExtras();
