@@ -1,6 +1,7 @@
 package org.bairdmich.soundcontrol;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
@@ -11,6 +12,8 @@ import android.widget.EditText;
 
 public class LoginActivity extends ActionBarActivity {
     public final static String EXTRA_MESSAGE = "org.bairdmich.soundcontrol.MESSAGE";
+
+    public static final String PREFS_NAME = "ClientSettings";
 
     public void connect(View view) {
         EditText ipText = (EditText) findViewById(R.id.edit_ip);
@@ -25,12 +28,30 @@ public class LoginActivity extends ActionBarActivity {
         startService(i);
         Intent mainact = new Intent(this, MainActivity.class);
         startActivity(mainact);
+
+        SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putString("hostname", hostName);
+        editor.putInt("port", Integer.valueOf(port));
+        editor.commit();
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+        String host = settings.getString("hostname", "");
+
+        int port = settings.getInt("port", 27015);
+
+        EditText hostnameText = (EditText)findViewById(R.id.edit_ip);
+        if (!"".equals(hostnameText)) {
+            hostnameText.setText(host);
+        }
+        EditText portText = (EditText)findViewById(R.id.edit_port);
+        portText.setText(Integer.toString(port));
     }
 
 
