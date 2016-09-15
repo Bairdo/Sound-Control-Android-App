@@ -7,5 +7,5 @@ import java.util.Map;
  */
 public interface ConnectionActivity {
 
-    public void update(Map<Integer, AudioSession> audioSessions, ConnectSocketUDP server);
+    public void update(Map<Integer, AbstractAudioSession> audioSessions, ConnectSocketUDP server);
 }

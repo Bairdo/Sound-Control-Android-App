@@ -18,9 +18,9 @@
         </activity>
         <activity
             android:name=".MainActivity"
-            android:label="mainActivity" />
+            android:label="mainActivity"
+            android:noHistory="true"/>
 
-        <service android:name=".HelloService" />
         <service android:name=".ConnectionService"/>
     </application>
 </manifest>

@@ -19,6 +19,7 @@
         android:text="@string/default_port"
 
         android:layout_toRightOf="@id/edit_ip"
+        android:inputType="number"
 
         android:layout_centerVertical="true" />
 
