@@ -68,8 +68,8 @@ public class ConnectionService extends Service {
                 Log.d("connectionService", "extras was null");
 
             } else {
-                int port = extras.getInt("port");
-                String hostname = extras.getString("hostname");
+                int port = extras.getInt(LoginActivity.PORT_EXTRA);
+                String hostname = extras.getString(LoginActivity.HOST_EXTRA);
 
                 Log.d("connectionService", "port: " + port);
                 Log.d("connectionService", "hostname: " + hostname);
@@ -77,11 +77,11 @@ public class ConnectionService extends Service {
                 Intent i = new Intent();
                 i.setClass(this, MainActivity.class);
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                i.putExtra("hostname", hostname);
-                i.putExtra("port", Integer.valueOf(port));
                 startActivity(i);
                 server = new ConnectSocketUDP(this ,hostname, port);
                 mServiceHandler.post(server);
+
+                       // new IconTask(getApplicationContext()).execute(5);
             }
             Intent i = new Intent();
             i.setClass(this, MainActivity.class);

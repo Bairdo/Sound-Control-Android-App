@@ -89,6 +89,7 @@ public class MainActivity extends Activity implements ConnectionActivity {
 
 
         boolean ret = getApplicationContext().bindService(new Intent(this, ConnectionService.class), mConnection, Context.BIND_AUTO_CREATE);
+        updateList(); // check if calling this actually does anything. suspect it doesnt cause the service hasnt yet given us the list.
     }
 
     ConnectionService mService;
@@ -151,11 +152,6 @@ public class MainActivity extends Activity implements ConnectionActivity {
         endpointListAdapter.update(audioEndpoints);
     }
 
-    public void stopService() {
-
-        Intent intent = new Intent(MainActivity.this, HelloService.class);
-        stopService(intent);
-    }
 
     private class ListAdapter extends BaseAdapter {
         private final Context con;

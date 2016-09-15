@@ -2,6 +2,8 @@ package org.bairdmich.soundcontrol;
 
 import android.support.annotation.NonNull;
 
+import java.io.File;
+
 /**
  * Created by Michael on 6/12/2015.
  */
@@ -13,6 +15,10 @@ public abstract class AbstractAudioSession implements Comparable<AbstractAudioSe
 
     private boolean muted;
 
+    private String filename;
+
+    private File icon;
+
     //todo the image icon.
 
     public AbstractAudioSession(int pid, String name, int volume, boolean muted) {
@@ -20,6 +26,24 @@ public abstract class AbstractAudioSession implements Comparable<AbstractAudioSe
         this.name = name;
         this.volume = volume;
         this.muted = muted;
+
+
+    }
+
+    public File getIcon() {
+        return icon;
+    }
+
+    public void setIcon(File icon) {
+        this.icon = icon;
+    }
+
+    public String getFilename() {
+        return filename;
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
     }
 
     public int getPid() {
@@ -39,7 +63,13 @@ public abstract class AbstractAudioSession implements Comparable<AbstractAudioSe
     }
 
     public void setVolume(int volume) {
-        this.volume = volume;
+        if (volume <  0){
+            this.volume = 0;
+        } else if (volume > 100){
+            this.volume = 100;
+        }else {
+            this.volume = volume;
+        }
     }
 
     // this return a positive int between 0-100;

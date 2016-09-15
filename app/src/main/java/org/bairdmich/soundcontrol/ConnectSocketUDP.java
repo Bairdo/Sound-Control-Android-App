@@ -1,7 +1,6 @@
 package org.bairdmich.soundcontrol;
 
-import android.app.Activity;
-import android.os.AsyncTask;
+import android.os.NetworkOnMainThreadException;
 import android.util.Log;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -9,8 +8,10 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -37,10 +38,14 @@ public class ConnectSocketUDP implements Runnable {
     private InetSocketAddress socketAddress;
 
     private ConnectionService service;
+    private final String hostname;
+    private final int port;
 
     public ConnectSocketUDP(ConnectionService service, String hostname, int port){
-        this.socketAddress = getINetSocketAddress(hostname, port);
+
         this.service = service;
+        this.hostname = hostname;
+        this.port = port;
     }
 
 
@@ -72,20 +77,20 @@ public class ConnectSocketUDP implements Runnable {
         BufferedInputStream b = new BufferedInputStream(new ByteArrayInputStream(data));
 
         try {
-            int pid = readPid(b);
+            int pid = PacketFunctions.readPid(b);
             if (pid == 999999){
-                int volume = readVol(b);
-                int nameLength = readLength(b);
-                String name = readName(b, nameLength);
-                boolean muted = readMuted(b);
+                int volume = PacketFunctions.readVol(b);
+                int nameLength = PacketFunctions.readLength(b);
+                String name = PacketFunctions.readName(b, nameLength);
+                boolean muted = PacketFunctions.readMuted(b);
                 AbstractAudioSession ae = new AudioEndpoint(pid, name, volume, muted);
                 list.put(pid, ae);
                 Log.i(TAG, ae.toString());
             }else {
-                int volume = readVol(b);
-                int nameLength = readLength(b);
-                String name = readName(b, nameLength);
-                boolean muted = readMuted(b);
+                int volume = PacketFunctions.readVol(b);
+                int nameLength = PacketFunctions.readLength(b);
+                String name = PacketFunctions.readName(b, nameLength);
+                boolean muted = PacketFunctions.readMuted(b);
                 AudioSession as = new AudioSession(pid, name, volume, muted);
                 list.put(pid, as);
                 Log.i(TAG, as.toString());
@@ -101,9 +106,8 @@ public class ConnectSocketUDP implements Runnable {
     }
 
     private boolean readMuted(BufferedInputStream b) throws IOException {
-        int muted = b.read();
 
-        return muted != 0;
+        return PacketFunctions.readMuted(b);
     }
 
 
@@ -113,7 +117,18 @@ public class ConnectSocketUDP implements Runnable {
         Log.d(TAG, "Hostname: '" + hostname + "'");
         Log.d(TAG, "Port number: '" + port + "'");
 
-        return new InetSocketAddress(hostname, port);
+        try {
+            return new InetSocketAddress(hostname, port);
+        } catch (NetworkOnMainThreadException e){
+            try {
+                return new InetSocketAddress(InetAddress.getByName(hostname), port);
+            } catch (UnknownHostException e1) {
+                e1.printStackTrace();
+            }
+        }
+
+        return null;
+
     }
 
     /**
@@ -146,54 +161,6 @@ public class ConnectSocketUDP implements Runnable {
     }
 
 
-    // pid is 4 bytes
-    private int readPid(BufferedInputStream in) throws IOException {
-        int pid1 = in.read();
-        int pid2 = in.read();
-        int pid3 = in.read();
-        int pid4 = in.read();
-
-        return pid1 | pid2 << 8 | pid3 << 16 | pid4 << 24;
-    }
-
-    private float readVolFloat(BufferedInputStream in) throws IOException {
-        int netFloat1 = in.read();
-        int netFloat2 = in.read();
-        int netFloat3 = in.read();
-        int netFloat4 = in.read();
-        return Float.intBitsToFloat(netFloat1 | netFloat2 << 8 | netFloat3 << 16 | netFloat4 << 24);
-    }
-
-    private int readVol(BufferedInputStream in) throws IOException {
-        int netFloat1 = in.read();
-        int netFloat2 = in.read();
-        int netFloat3 = in.read();
-        int netFloat4 = in.read();
-        return (netFloat1 | netFloat2 << 8 | netFloat3 << 16 | netFloat4 << 24);
-    }
-
-    // length is a long (windows) so 4 bytes
-    private int readLength(BufferedInputStream in) throws IOException {
-        return in.read() | in.read() << 8 | in.read() << 16 | in.read() << 24;
-    }
-
-
-    private String readName(BufferedInputStream in, int length) throws IOException {
-        int buf[] = new int[length];
-        int j = 0;
-        while ((j < (length)) && (buf[j] = in.read()) != -1) {
-            j++;
-        }
-
-        char[] name = new char[length / 2]; // reading 1 byte, but char (in java) is 2 bytes,
-
-        for (int n = 0, b = 0; n < name.length; n++, b += 2) {
-            name[n] = (char) (buf[b] | buf[b + 1]);
-        }
-
-        return new String(name);
-    }
-
     @SuppressWarnings("BooleanParameter")
     public void update(AbstractAudioSession as) {
         byte[] update = "Update".getBytes();
@@ -224,7 +191,7 @@ public class ConnectSocketUDP implements Runnable {
     @Override
     public void run() {
         Log.d(TAG, "doing in runnable");
-
+        this.socketAddress = getINetSocketAddress(hostname, port);
         //String message = "uninitialised";
 
         try {

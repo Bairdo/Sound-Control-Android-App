@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.text.InputFilter;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -15,6 +16,15 @@ public class LoginActivity extends ActionBarActivity {
 
     public static final String PREFS_NAME = "ClientSettings";
 
+    public static final String HOST_PREFS = "hostname";
+    public static final String PORT_PREFS = "port";
+
+    public static final String HOST_EXTRA = "hostname";
+    public static final String PORT_EXTRA = "port";
+
+    private static final int MIN_PORT = 0;
+    private static final int MAX_PORT = 65535;
+
     public void connect(View view) {
         EditText ipText = (EditText) findViewById(R.id.edit_ip);
         String hostName = ipText.getText().toString().trim();
@@ -23,16 +33,17 @@ public class LoginActivity extends ActionBarActivity {
         String port = portText.getText().toString().trim();
 
         Intent i = new Intent(this, ConnectionService.class);
-        i.putExtra("hostname", hostName);
-        i.putExtra("port", Integer.valueOf(port));
+        i.putExtra(HOST_EXTRA, hostName);
+        i.putExtra(PORT_EXTRA, Integer.valueOf(port));
         startService(i);
+
         Intent mainact = new Intent(this, MainActivity.class);
         startActivity(mainact);
 
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
         SharedPreferences.Editor editor = settings.edit();
-        editor.putString("hostname", hostName);
-        editor.putInt("port", Integer.valueOf(port));
+        editor.putString(HOST_PREFS, hostName);
+        editor.putInt(PORT_PREFS, Integer.valueOf(port));
         editor.commit();
     }
 
@@ -42,9 +53,9 @@ public class LoginActivity extends ActionBarActivity {
         setContentView(R.layout.activity_login);
 
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
-        String host = settings.getString("hostname", "");
+        String host = settings.getString(HOST_PREFS, "");
 
-        int port = settings.getInt("port", 27015);
+        int port = settings.getInt(PORT_PREFS, 27015);
 
         EditText hostnameText = (EditText)findViewById(R.id.edit_ip);
         if (!"".equals(hostnameText)) {
@@ -52,7 +63,11 @@ public class LoginActivity extends ActionBarActivity {
         }
         EditText portText = (EditText)findViewById(R.id.edit_port);
         portText.setText(Integer.toString(port));
+
+        portText.setFilters(new InputFilter[]{new InputFilterMinMax(MIN_PORT, MAX_PORT)});
     }
+
+
 
 
     @Override
